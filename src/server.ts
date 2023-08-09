@@ -1,52 +1,26 @@
-import { PrismaClient } from "@prisma/client";
 import express from "express";
 
-const prisma = new PrismaClient();
+import { routes } from "./routes";
+
 const app = express();
 
 app.use(express.json());
 
-app.get("/feed", async (request, response) => {
-  const posts = await prisma.post.findMany({
-    where: { published: true },
-    include: { author: true },
-  });
-  response.json(posts);
-});
+app.use(routes);
 
-app.post("/post", async (request, response) => {
-  const { title, content, authorEmail } = request.body;
-  const post = await prisma.post.create({
-    data: {
-      title,
-      content,
-      author: { connect: { email: authorEmail } },
-    },
-  });
-
-  response.json(post);
-});
-
-app.put("/publish/:id", async (request, response) => {
-  const { id } = request.params;
-
-  const post = await prisma.post.update({
-    where: { id: Number(id) },
-    data: { published: true },
-  });
-
-  response.json(post);
-});
-
-app.delete("/user/:id", async (request, response) => {
-  const { id } = request.params;
-
-  const user = await prisma.user.delete({
-    where: { id },
-  });
-
-  response.json(user);
-});
+// tratamento de rotas de erro ou não encontradas
+app.use(
+  (
+    error: Error,
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
+  ) => {
+    if (error instanceof Error) {
+      return response.status(400).json({ error: error.message });
+    }
+  }
+);
 
 app.listen(3333, () => {
   console.log("Server Running!");
